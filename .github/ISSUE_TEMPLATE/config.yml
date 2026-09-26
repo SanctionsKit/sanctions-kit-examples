@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: SanctionsKit API documentation
+    url: https://www.sanctionskit.com/docs
+    about: Request fields, authentication, errors, and integration guides.
+  - name: Account or API support
+    url: https://www.sanctionskit.com/contact
+    about: Get help with your SanctionsKit account.

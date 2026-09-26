@@ -1,0 +1,114 @@
+{
+  "data": {
+    "policySnapshot": {
+      "name": "Synthetic onboarding policy",
+      "purpose": "Document vendor onboarding checks",
+      "jurisdictions": [
+        "Example jurisdiction"
+      ],
+      "requiredSources": {},
+      "optionalSources": {},
+      "exclusions": [],
+      "externalChecks": [
+        "Ownership review"
+      ],
+      "review": {
+        "requireSecondReview": false,
+        "secondReviewFor": [],
+        "approverRoles": [
+          "owner",
+          "admin",
+          "analyst"
+        ]
+      },
+      "monitoringIntervalHours": 24,
+      "retentionTrigger": "business_event",
+      "id": "00000000-0000-4000-8000-000000000001",
+      "version": 1,
+      "environment": "sandbox",
+      "createdAt": "2026-09-17T12:00:00.000Z"
+    },
+    "id": "00000000-0000-4000-8000-000000000002",
+    "environment": "sandbox",
+    "status": "potential_match",
+    "createdAt": "2026-09-17T12:00:00.000Z",
+    "matches": [
+      {
+        "record": {
+          "id": "sandbox:person-001",
+          "sourceId": "sandbox-synthetic",
+          "authority": "SanctionsKit synthetic examples",
+          "list": "Synthetic demonstration records",
+          "sourceUrl": "https://sanctionskit.com/demo",
+          "entityType": "person",
+          "names": [
+            {
+              "value": "Alex Morgan",
+              "kind": "primary"
+            },
+            {
+              "value": "Алекс Морган",
+              "kind": "alias"
+            }
+          ],
+          "identifiers": [
+            {
+              "type": "passport",
+              "value": "DEMO-001",
+              "issuer": "Fictional authority"
+            }
+          ],
+          "birthDates": [
+            {
+              "value": "1984",
+              "precision": "year",
+              "original": "1984"
+            }
+          ],
+          "addresses": [],
+          "nationalities": [],
+          "designations": [
+            {
+              "category": "other",
+              "programs": [
+                "Synthetic demonstration only"
+              ],
+              "legalReferences": [],
+              "wording": "Invented example, not a government designation."
+            }
+          ],
+          "extensions": {
+            "synthetic": true
+          }
+        },
+        "score": 96,
+        "evidence": [
+          {
+            "field": "name",
+            "queryValue": "Alex Morgan",
+            "sourceValue": "Alex Morgan",
+            "method": "normalized_name_exact",
+            "contribution": 96,
+            "explanation": "Name similarity is a review signal, not a probability or finding of wrongdoing."
+          }
+        ],
+        "conflicts": []
+      }
+    ],
+    "coverage": [
+      {
+        "sourceId": "sandbox-synthetic",
+        "version": "1",
+        "retrievedAt": "2026-09-17T12:00:00.000Z",
+        "fresh": true
+      }
+    ],
+    "versions": {
+      "dataset": "sandbox-synthetic-v1",
+      "matchingEngine": "deterministic-1.1.1",
+      "policy": "review-1.1.0",
+      "package": "sandbox@1"
+    },
+    "disclaimer": "Potential matches support analyst review. No match means no match in the selected sources and dataset, not legal clearance. Scores are similarity measures, not probabilities of wrongdoing."
+  }
+}

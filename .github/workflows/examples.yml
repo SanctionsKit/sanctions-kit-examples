@@ -1,0 +1,60 @@
+name: Examples
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [curl, javascript, typescript, python, ruby, php, go, java, csharp]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          check-latest: true
+      - uses: actions/setup-node@v7
+        if: matrix.language == 'javascript' || matrix.language == 'typescript'
+        with:
+          node-version: '24'
+          check-latest: true
+      - uses: ruby/setup-ruby@v1
+        if: matrix.language == 'ruby'
+        with:
+          ruby-version: '3.4'
+      - uses: shivammathur/setup-php@v2
+        if: matrix.language == 'php'
+        with:
+          php-version: '8.4'
+          extensions: curl
+          coverage: none
+          tools: none
+        env:
+          update: true
+      - uses: actions/setup-go@v7
+        if: matrix.language == 'go'
+        with:
+          go-version: stable
+          check-latest: true
+          cache: false
+      - uses: actions/setup-java@v6
+        if: matrix.language == 'java'
+        with:
+          distribution: temurin
+          java-version: '17'
+          check-latest: true
+      - uses: actions/setup-dotnet@v6
+        if: matrix.language == 'csharp'
+        with:
+          dotnet-version: '8.0.x'
+      - name: Test example against local HTTP server
+        run: python3 tests/smoke_test.py "${{ matrix.language }}"

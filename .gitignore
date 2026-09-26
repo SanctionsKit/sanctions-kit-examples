@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+__pycache__/
+*.pyc
+node_modules/
+bin/
+obj/
+*.class
+*.exe
+go/screen
+go/sanctionskit-example
+.idea/
+.vscode/

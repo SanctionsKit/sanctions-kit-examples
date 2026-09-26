@@ -1,0 +1,17 @@
+name: Example bug
+description: Report a problem running an example.
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language and runtime version
+      placeholder: Python 3.12
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What happened?
+      description: Include the command, expected result, and error message. Remove API keys and personal data.
+    validations:
+      required: true
