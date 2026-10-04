@@ -1,0 +1,5 @@
+defaultTs: bun
+includes:
+  - f/**
+skipVariables: true
+skipResources: true

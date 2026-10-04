@@ -1,0 +1,18 @@
+{
+  "name": "sanctionskit",
+  "description": "SanctionsKit API key. Use a sandbox key with screenings:write and results:read for the synthetic onboarding example.",
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["api_key"],
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "format": "password",
+        "minLength": 1,
+        "description": "Private sandbox key. Reference a Windmill secret variable; never paste a real key into source or examples."
+      }
+    }
+  }
+}

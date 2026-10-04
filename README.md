@@ -22,6 +22,16 @@ Simple sanctions screening API examples in JavaScript, TypeScript, Python, Go, P
 
 Each directory has setup instructions and one standalone screening example. No SanctionsKit SDK is required.
 
+## Workflow integrations
+
+[Windmill](integrations/windmill/) takes a fictional onboarding contact through a synthetic screening and retrieves the evidence for that same result. It includes a credential resource, importable script, example output, and local tests. Both screening outcomes leave the onboarding decision open for review.
+
+Run its local HTTP tests with Node.js 24 or later:
+
+```sh
+npm --prefix integrations/windmill test
+```
+
 ## Make your first request
 
 1. [Create a workspace](https://www.sanctionskit.com/signup), then open [API keys](https://www.sanctionskit.com/dashboard/keys?environment=sandbox).

@@ -1,0 +1,27 @@
+name: Windmill example
+
+on:
+  push:
+    paths:
+      - "integrations/windmill/**"
+      - ".github/workflows/windmill.yml"
+  pull_request:
+    paths:
+      - "integrations/windmill/**"
+      - ".github/workflows/windmill.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-http-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Test the Windmill script with local synthetic responses
+        run: npm --prefix integrations/windmill test

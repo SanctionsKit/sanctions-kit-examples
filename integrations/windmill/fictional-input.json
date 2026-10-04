@@ -1,0 +1,10 @@
+{
+  "sanctionskit": "$res:f/sanctionskit/sandbox",
+  "contact": {
+    "name": "Alex Morgan",
+    "reference": "example-customer-001",
+    "birth_year": "1984"
+  },
+  "event_id": "windmill:example-customer-001:v1",
+  "synthetic": true
+}

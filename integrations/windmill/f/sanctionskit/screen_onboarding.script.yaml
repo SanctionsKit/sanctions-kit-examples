@@ -1,0 +1,50 @@
+summary: Screen a fictional onboarding contact with SanctionsKit
+description: >-
+  Run a synthetic screening, retrieve the same result's evidence, and return a
+  review-ready handoff. Uses sandbox@1 only. No automatic onboarding decisions.
+  Setup: https://www.sanctionskit.com/docs/quickstart
+kind: script
+lock: ""
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  required:
+    - sanctionskit
+    - contact
+    - event_id
+    - synthetic
+  properties:
+    sanctionskit:
+      type: object
+      format: resource-sanctionskit
+      description: Select your private sandbox credential resource.
+    contact:
+      type: object
+      required:
+        - name
+        - reference
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 300
+          description: An invented person's name. Do not enter real customer data.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 160
+          description: Your fictional onboarding record ID.
+        birth_year:
+          type: string
+          pattern: '^(?!0000)\d{4}$'
+          description: Optional four-digit fictional birth year.
+    event_id:
+      type: string
+      minLength: 8
+      maxLength: 128
+      pattern: '^[\w:.-]{8,128}$'
+      description: Reuse this ID and the same contact when retrying the same event.
+    synthetic:
+      type: boolean
+      default: false
+      description: Confirm that the contact is fictional before running.
