@@ -23,7 +23,9 @@ with a checked artifact hash. [runtime-lock.json](runtime-lock.json) records the
 sources. Network access is needed only while building the image.
 
 Execution uses Docker `--network none`, with no published ports or Docker socket.
-The test runner refuses to start unless its only network interface is `lo`. It
+The fixed hostname resolves to `127.0.0.1` through the container's hosts file, so
+Java can identify the local host without DNS. The test runner checks that mapping
+and refuses to start unless its only network interface is `lo`. It
 runs as an unprivileged user with all Linux capabilities dropped, no new privileges,
 a read-only root filesystem, and temporary writable directories. The only service
 key is the invented string `local-mock-only`; no GitHub secret or real API key is
@@ -35,6 +37,7 @@ From this directory on a machine with Docker:
 docker build -f tests/Dockerfile -t sanctionskit-kestra-fixture .
 mkdir -p test-results
 docker run --rm --network none --cap-drop ALL \
+  --hostname kestra-fixture --add-host kestra-fixture:127.0.0.1 \
   --security-opt no-new-privileges:true --read-only \
   --memory 3g --cpus 2 --pids-limit 512 \
   --user "$(id -u):$(id -g)" \

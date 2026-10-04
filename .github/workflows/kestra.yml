@@ -31,6 +31,7 @@ jobs:
         run: |
           mkdir -p test-results
           docker run --rm --network none --cap-drop ALL \
+            --hostname kestra-fixture --add-host kestra-fixture:127.0.0.1 \
             --security-opt no-new-privileges:true --read-only \
             --memory 3g --cpus 2 --pids-limit 512 \
             --user "$(id -u):$(id -g)" \

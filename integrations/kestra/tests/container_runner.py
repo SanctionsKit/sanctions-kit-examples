@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -12,6 +13,10 @@ import urllib.request
 interfaces = sorted(p.name for p in Path('/sys/class/net').iterdir())
 assert interfaces == ['lo'], f'Expected isolated loopback-only container, got {interfaces}'
 assert os.geteuid() != 0, 'Run the test container as an unprivileged user'
+hostname = socket.gethostname()
+assert hostname == 'kestra-fixture', 'Run the test container with --hostname kestra-fixture'
+hostname_addresses = sorted({address[4][0] for address in socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)})
+assert hostname_addresses == ['127.0.0.1'], f'Expected hostname to resolve only to loopback, got {hostname_addresses}'
 root = Path('/work/example')
 shutil.copytree('/opt/example', root)
 work = Path('/work/runtime')
@@ -46,7 +51,7 @@ with log.open('w') as stream:
             source = root / name
             if source.exists():
                 shutil.copy2(source, Path('/evidence') / source.name)
-        report = {'network_interfaces': interfaces, 'runtime': 'Kestra2.0.4', 'fixture_tests_exit': result, 'hosted_api_calls': 0, 'service_credentials_used': False}
+        report = {'network_interfaces': interfaces, 'hostname': hostname, 'hostname_addresses': hostname_addresses, 'runtime': 'Kestra2.0.4', 'fixture_tests_exit': result, 'hosted_api_calls': 0, 'service_credentials_used': False}
         Path('/evidence/container-boundary.json').write_text(json.dumps(report, indent=2) + '\n')
         # The only key involved is fake, but logs still must not expose it.
         assert 'local-mock-only' not in log.read_text(), 'Mock key leaked to server log'
