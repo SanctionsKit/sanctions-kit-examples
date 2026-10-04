@@ -1,0 +1,25 @@
+# Disposable local test instance. These are invented test credentials.
+micronaut:
+  server:
+    host: 127.0.0.1
+    port: 28101
+  executors:
+    io:
+      type: fixed
+      nThreads: 8
+kestra:
+  anonymous-usage-report:
+    enabled: false
+  ui-anonymous-usage-report:
+    enabled: false
+  tutorial-flows:
+    enabled: false
+  plugins:
+    auto-install:
+      enabled: false
+  server:
+    basic-auth:
+      username: local@sanctionskit.invalid
+      password: LocalMockOnly123!
+  controller:
+    port: 28103

@@ -1,0 +1,48 @@
+name: Kestra 2.0 candidate fixture
+
+on:
+  push:
+    paths:
+      - "integrations/kestra/**"
+      - ".github/workflows/kestra.yml"
+  pull_request:
+    paths:
+      - "integrations/kestra/**"
+      - ".github/workflows/kestra.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-synthetic-fixture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: integrations/kestra
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build pinned official runtime and fixture image
+        run: docker build -f tests/Dockerfile -t sanctionskit-kestra-fixture .
+      - name: Execute native flow with only container loopback available
+        run: |
+          mkdir -p test-results
+          docker run --rm --network none --cap-drop ALL \
+            --security-opt no-new-privileges:true --read-only \
+            --memory 3g --cpus 2 --pids-limit 512 \
+            --user "$(id -u):$(id -g)" \
+            --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
+            --tmpfs /work:rw,nosuid,nodev,size=1g,mode=1777 \
+            --mount "type=bind,source=$PWD/test-results,target=/evidence" \
+            sanctionskit-kestra-fixture
+      - name: Keep native fixture evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kestra-2-native-fixture-${{ github.run_id }}
+          path: integrations/kestra/test-results/
+          retention-days: 7
+          if-no-files-found: warn

@@ -1,0 +1,6 @@
+__pycache__/
+tests/native-results.json
+tests/last-failure.json
+test-results/
+synthetic-review-bundle.json
+synthetic-row-summary.csv
