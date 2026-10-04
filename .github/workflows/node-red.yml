@@ -1,0 +1,38 @@
+name: Node-RED example
+
+on:
+  push:
+    paths:
+      - "integrations/node-red/**"
+      - ".github/workflows/node-red.yml"
+  pull_request:
+    paths:
+      - "integrations/node-red/**"
+      - ".github/workflows/node-red.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-runtime-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: integrations/node-red
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: integrations/node-red/package-lock.json
+      - name: Install pinned test runtime
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check the exported flow matches its source
+        run: |
+          npm run build
+          git diff --exit-code -- flow.json
+      - name: Test native nodes with local synthetic responses
+        run: npm test

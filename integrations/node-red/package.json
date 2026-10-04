@@ -1,0 +1,18 @@
+{
+  "name": "sanctionskit-node-red-sandbox-example",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "A core-node Node-RED example for synthetic screening and evidence.",
+  "author": "SanctionsKit",
+  "homepage": "https://www.sanctionskit.com/docs/quickstart",
+  "engines": { "node": ">=22.9" },
+  "scripts": {
+    "build": "node build-flow.cjs",
+    "test": "node --test --test-concurrency=1 tests/flow.test.cjs"
+  },
+  "devDependencies": {
+    "node-red": "5.0.7",
+    "node-red-node-test-helper": "0.3.6"
+  }
+}

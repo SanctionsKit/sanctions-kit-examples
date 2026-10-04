@@ -1,0 +1,237 @@
+[
+  {
+    "id": "sk-sandbox",
+    "type": "tab",
+    "label": "SanctionsKit synthetic screening",
+    "disabled": false,
+    "info": "Company example from SanctionsKit. Fixed fictional input, sandbox@1 only. Set SANCTIONSKIT_SANDBOX_KEY and REQUEST_KEY outside the flow JSON. Run manually. Free synthetic sandbox; paid production access is separate. No screening result is an approval decision.",
+    "env": []
+  },
+  {
+    "id": "sk-info",
+    "type": "comment",
+    "z": "sk-sandbox",
+    "name": "Manual synthetic example. Set the sandbox key in the process environment.",
+    "info": "Import the entire tab. Set REQUEST_KEY to a stable test-event ID; keep it unchanged when retrying the same input. This example makes two API requests after you click the manual trigger. Do not use real customer details. Output is limited to the supplied debug nodes; do not debug whole request messages because they contain the authorization header. Docs: https://www.sanctionskit.com/docs/quickstart",
+    "x": 350,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "sk-run",
+    "type": "inject",
+    "z": "sk-sandbox",
+    "name": "Run fictional screening",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 140,
+    "wires": [
+      [
+        "sk-prepare"
+      ]
+    ]
+  },
+  {
+    "id": "sk-prepare",
+    "type": "function",
+    "z": "sk-sandbox",
+    "name": "Prepare synthetic request",
+    "func": "const key = env.get(\"SANCTIONSKIT_SANDBOX_KEY\");\nif (typeof key !== \"string\" || !key || key.length > 512 || /\\s/.test(key)) {\n  return [null, { payload: {\n    synthetic: true, ok: false, stage: \"setup\", code: \"SANDBOX_KEY_REQUIRED\",\n    message: \"Set SANCTIONSKIT_SANDBOX_KEY in the Node-RED process environment.\",\n    reviewProduced: false\n  }}];\n}\nconst eventId = env.get(\"REQUEST_KEY\");\nif (typeof eventId !== \"string\" || !/^[\\w:.-]{8,128}$/.test(eventId)) {\n  return [null, { payload: {\n    synthetic: true, ok: false, stage: \"setup\", code: \"REQUEST_KEY_REQUIRED\",\n    message: \"Set REQUEST_KEY to a stable test-event ID before running the flow.\",\n    reviewProduced: false\n  }}];\n}\nconst request = {\n  subject: { name: \"Alex Morgan\", entityType: \"person\", birthDate: \"1984\" },\n  package: \"sandbox@1\",\n  reference: \"node-red-synthetic-example\",\n  retention: \"standard\"\n};\nreturn [{\n  _msgid: msg._msgid,\n  payload: JSON.stringify(request),\n  headers: {\n    Authorization: \"Bearer \" + key,\n    Accept: \"application/json\",\n    \"Content-Type\": \"application/json\",\n    \"Idempotency-Key\": eventId\n  },\n  followRedirects: false,\n  requestTimeout: 15000,\n  screeningRequest: request,\n  eventId\n}, null];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 140,
+    "wires": [
+      [
+        "sk-screen"
+      ],
+      [
+        "sk-errors"
+      ]
+    ]
+  },
+  {
+    "id": "sk-screen",
+    "type": "http request",
+    "z": "sk-sandbox",
+    "name": "Screen in sandbox",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "https://www.sanctionskit.com/api/v1/screenings",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 670,
+    "y": 140,
+    "wires": [
+      [
+        "sk-evidence-request"
+      ]
+    ]
+  },
+  {
+    "id": "sk-evidence-request",
+    "type": "function",
+    "z": "sk-sandbox",
+    "name": "Validate result; request its evidence",
+    "func": "function fail(code, message) {\n  return [null, { payload: {\n    synthetic: true, ok: false, stage: \"screening\", code, message,\n    reviewProduced: false\n  }}];\n}\nif (!Number.isInteger(msg.statusCode) || msg.statusCode < 200 || msg.statusCode > 299) {\n  return fail(\"SCREENING_HTTP_ERROR\", \"Screening did not return a successful HTTP response.\");\n}\nif (!String(msg.headers?.[\"content-type\"] || \"\").toLowerCase().includes(\"application/json\") ||\n    typeof msg.payload !== \"string\" || Buffer.byteLength(msg.payload, \"utf8\") > 1048576) {\n  return fail(\"SCREENING_RESPONSE_INVALID\", \"Screening returned an unexpected response.\");\n}\nlet response;\ntry { response = JSON.parse(msg.payload); }\ncatch { return fail(\"SCREENING_RESPONSE_INVALID\", \"Screening returned invalid JSON.\"); }\nconst result = response?.data;\nconst uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nif (!result || typeof result !== \"object\" || Array.isArray(result) ||\n    typeof result.id !== \"string\" || !uuid.test(result.id) ||\n    result.environment !== \"sandbox\" || result.versions?.package !== \"sandbox@1\" ||\n    ![\"potential_match\", \"no_match\"].includes(result.status) ||\n    !Array.isArray(result.matches) ||\n    (result.status === \"potential_match\") !== (result.matches.length > 0) ||\n    !Array.isArray(result.coverage) || !result.coverage.length ||\n    result.coverage.some(source => source?.sourceId !== \"sandbox-synthetic\" ||\n      typeof source.version !== \"string\" || typeof source.fresh !== \"boolean\") ||\n    typeof result.disclaimer !== \"string\" || !result.disclaimer ||\n    [\"dataset\", \"matchingEngine\", \"policy\"].some(k => typeof result.versions[k] !== \"string\" || !result.versions[k])) {\n  return fail(\"SCREENING_RESPONSE_INVALID\", \"No complete synthetic screening result was returned.\");\n}\nconst key = env.get(\"SANCTIONSKIT_SANDBOX_KEY\");\nif (typeof key !== \"string\" || !key || key.length > 512 || /\\s/.test(key)) {\n  return fail(\"SANDBOX_KEY_REQUIRED\", \"The sandbox key is unavailable. No review record was produced.\");\n}\nreturn [{\n  _msgid: msg._msgid,\n  screeningId: result.id,\n  screeningResult: result,\n  screeningRequest: msg.screeningRequest,\n  eventId: msg.eventId,\n  headers: { Authorization: \"Bearer \" + key, Accept: \"application/json\" },\n  followRedirects: false,\n  requestTimeout: 15000\n}, null];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 240,
+    "wires": [
+      [
+        "sk-evidence"
+      ],
+      [
+        "sk-errors"
+      ]
+    ]
+  },
+  {
+    "id": "sk-evidence",
+    "type": "http request",
+    "z": "sk-sandbox",
+    "name": "Get evidence for this result",
+    "method": "GET",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "https://www.sanctionskit.com/api/v1/results/{{screeningId}}/evidence",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 670,
+    "y": 240,
+    "wires": [
+      [
+        "sk-review"
+      ]
+    ]
+  },
+  {
+    "id": "sk-review",
+    "type": "function",
+    "z": "sk-sandbox",
+    "name": "Validate evidence; create review record",
+    "func": "function fail(code, message) {\n  return [null, { payload: {\n    synthetic: true, ok: false, stage: \"evidence\", code, message,\n    reviewProduced: false\n  }}];\n}\nif (!Number.isInteger(msg.statusCode) || msg.statusCode < 200 || msg.statusCode > 299) {\n  return fail(\"EVIDENCE_HTTP_ERROR\", \"Evidence did not return a successful HTTP response.\");\n}\nif (!String(msg.headers?.[\"content-type\"] || \"\").toLowerCase().includes(\"application/json\") ||\n    typeof msg.payload !== \"string\" || Buffer.byteLength(msg.payload, \"utf8\") > 1048576) {\n  return fail(\"EVIDENCE_RESPONSE_INVALID\", \"Evidence returned an unexpected response.\");\n}\nlet evidence;\ntry { evidence = JSON.parse(msg.payload); }\ncatch { return fail(\"EVIDENCE_RESPONSE_INVALID\", \"Evidence returned invalid JSON.\"); }\nconst saved = evidence?.result;\nconst original = msg.screeningResult;\nconst request = msg.screeningRequest;\nconst coverage = value => Array.isArray(value) ? value.map(source =>\n  [source?.sourceId, source?.version, source?.retrievedAt, source?.fresh]\n).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) : null;\nif (!evidence || typeof evidence !== \"object\" || Array.isArray(evidence) ||\n    evidence.format !== \"sanctionskit-evidence@1\" ||\n    evidence.retention !== \"standard\" || evidence.retainedInputs !== true ||\n    !saved || !original || !request ||\n    saved.id !== original.id || saved.id !== msg.screeningId ||\n    saved.status !== original.status || saved.environment !== \"sandbox\" ||\n    [\"package\", \"dataset\", \"matchingEngine\", \"policy\"].some(k => saved.versions?.[k] !== original.versions[k]) ||\n    JSON.stringify(coverage(saved.coverage)) !== JSON.stringify(coverage(original.coverage)) ||\n    !Array.isArray(saved.matches) ||\n    (saved.status === \"potential_match\") !== (saved.matches.length > 0) ||\n    typeof saved.disclaimer !== \"string\" || !saved.disclaimer ||\n    evidence.reference !== request.reference ||\n    evidence.subject?.name !== request.subject.name ||\n    evidence.subject?.entityType !== request.subject.entityType ||\n    evidence.subject?.birthDate !== request.subject.birthDate) {\n  return fail(\"EVIDENCE_IDENTITY_INVALID\", \"Evidence does not match this completed synthetic screening.\");\n}\nreturn [{ payload: {\n  synthetic: true,\n  ok: true,\n  screeningId: saved.id,\n  eventId: msg.eventId,\n  status: saved.status,\n  review: {\n    required: true,\n    decision: \"not_made\",\n    nextStep: saved.status === \"potential_match\"\n      ? \"Compare the candidate records and evidence. A name match is not an onboarding decision.\"\n      : \"Review the selected coverage and your onboarding requirements. No match is not clearance.\"\n  },\n  result: saved,\n  evidence\n}}, null];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 340,
+    "wires": [
+      [
+        "sk-output"
+      ],
+      [
+        "sk-errors"
+      ]
+    ]
+  },
+  {
+    "id": "sk-output",
+    "type": "debug",
+    "z": "sk-sandbox",
+    "name": "Synthetic review record",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "sk-catch",
+    "type": "catch",
+    "z": "sk-sandbox",
+    "name": "Catch request failures",
+    "scope": [
+      "sk-prepare",
+      "sk-screen",
+      "sk-evidence-request",
+      "sk-evidence",
+      "sk-review"
+    ],
+    "uncaught": false,
+    "x": 160,
+    "y": 440,
+    "wires": [
+      [
+        "sk-sanitize"
+      ]
+    ]
+  },
+  {
+    "id": "sk-sanitize",
+    "type": "function",
+    "z": "sk-sandbox",
+    "name": "Remove request details",
+    "func": "const stage = {\n  \"sk-prepare\": \"setup\",\n  \"sk-screen\": \"screening\",\n  \"sk-evidence-request\": \"screening\",\n  \"sk-evidence\": \"evidence\",\n  \"sk-review\": \"evidence\"\n}[msg.error?.source?.id] || \"workflow\";\nreturn { payload: {\n  synthetic: true, ok: false, stage, code: \"REQUEST_FAILED\",\n  message: \"The request did not complete. No review record was produced.\",\n  reviewProduced: false\n}};\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 440,
+    "wires": [
+      [
+        "sk-errors"
+      ]
+    ]
+  },
+  {
+    "id": "sk-errors",
+    "type": "debug",
+    "z": "sk-sandbox",
+    "name": "Safe error summary",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 440,
+    "wires": []
+  }
+]

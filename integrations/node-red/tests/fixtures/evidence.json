@@ -1,0 +1,142 @@
+{
+  "format": "sanctionskit-evidence@1",
+  "result": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "status": "potential_match",
+    "matches": [
+      {
+        "score": 96,
+        "record": {
+          "id": "sandbox:person-001",
+          "list": "Synthetic demonstration records",
+          "names": [
+            {
+              "kind": "primary",
+              "value": "Alex Morgan"
+            },
+            {
+              "kind": "alias",
+              "value": "\u0410\u043b\u0435\u043a\u0441 \u041c\u043e\u0440\u0433\u0430\u043d"
+            }
+          ],
+          "sourceId": "sandbox-synthetic",
+          "addresses": [],
+          "authority": "SanctionsKit synthetic examples",
+          "sourceUrl": "https://sanctionskit.com/demo",
+          "birthDates": [
+            {
+              "value": "1984",
+              "original": "1984",
+              "precision": "year"
+            }
+          ],
+          "entityType": "person",
+          "extensions": {
+            "synthetic": true
+          },
+          "identifiers": [
+            {
+              "type": "passport",
+              "value": "DEMO-001",
+              "issuer": "Fictional authority"
+            }
+          ],
+          "designations": [
+            {
+              "wording": "Invented example, not a government designation.",
+              "category": "other",
+              "programs": [
+                "Synthetic demonstration only"
+              ],
+              "legalReferences": []
+            }
+          ],
+          "nationalities": []
+        },
+        "evidence": [
+          {
+            "field": "name",
+            "method": "normalized_name_exact",
+            "queryValue": "Alex Morgan",
+            "explanation": "Name similarity is a review signal, not a probability or finding of wrongdoing.",
+            "sourceValue": "Alex Morgan",
+            "contribution": 96
+          }
+        ],
+        "conflicts": [],
+        "assessment": {
+          "name": {
+            "method": "normalized_name_exact",
+            "aliasKind": "primary",
+            "similarity": 96,
+            "aliasQuality": "unknown"
+          },
+          "country": {
+            "status": "not_supplied"
+          },
+          "birthDate": {
+            "status": "not_supplied"
+          },
+          "alertBasis": "name",
+          "entityType": {
+            "status": "agreement"
+          },
+          "reviewTier": "name_only",
+          "identifiers": {
+            "status": "not_supplied",
+            "matched": 0,
+            "conflicts": 0,
+            "issuerUnknown": 0,
+            "issuerAgreements": 0
+          },
+          "hasConflicts": false,
+          "sameNameCandidates": 1
+        }
+      }
+    ],
+    "coverage": [
+      {
+        "fresh": true,
+        "version": "1",
+        "sourceId": "sandbox-synthetic",
+        "retrievedAt": "2026-09-17T12:00:00.000Z"
+      }
+    ],
+    "matching": {
+      "profile": "standard",
+      "version": "review-1.2.0",
+      "nameThreshold": 78,
+      "retrievalVersion": "indexed-1.1.1",
+      "corroboratedNameThreshold": 75
+    },
+    "versions": {
+      "policy": "review-1.2.0",
+      "dataset": "sandbox-synthetic-v1",
+      "package": "sandbox@1",
+      "matchingEngine": "deterministic-1.2.0"
+    },
+    "createdAt": "2026-09-17T12:00:00.000Z",
+    "disclaimer": "Potential matches support analyst review. No match means no match in the selected sources and dataset, not legal clearance. Scores and evidence categories support review; they are not probabilities of identity or wrongdoing.",
+    "environment": "sandbox"
+  },
+  "retention": "standard",
+  "expires_at": null,
+  "subject": {
+    "name": "Alex Morgan",
+    "entityType": "person",
+    "birthDate": "1984"
+  },
+  "reference": "node-red-synthetic-example",
+  "request": {
+    "subject": {
+      "name": "Alex Morgan",
+      "entityType": "person",
+      "birthDate": "1984"
+    },
+    "package": "sandbox@1",
+    "reference": "node-red-synthetic-example",
+    "retention": "standard"
+  },
+  "retainedInputs": true,
+  "replayLimit": null
+}

@@ -32,6 +32,8 @@ Run its local HTTP tests with Node.js 24 or later:
 npm --prefix integrations/windmill test
 ```
 
+[Node-RED](integrations/node-red/) includes an importable flow built with core nodes. Run a fictional screening, retrieve its evidence, and inspect a review record. It keeps credentials in the process environment and reuses a stable request key for manual retries. The README includes setup instructions and local runtime tests.
+
 ## Make your first request
 
 1. [Create a workspace](https://www.sanctionskit.com/signup), then open [API keys](https://www.sanctionskit.com/dashboard/keys?environment=sandbox).
@@ -48,7 +50,7 @@ node javascript/screen.mjs
 
 Keep API keys in your server environment. Never commit them or include them in browser code. Each language README includes its own setup command; C# also includes PowerShell instructions.
 
-All examples send this body to `https://www.sanctionskit.com/api/v1/screenings`:
+The standalone language examples send this body to `https://www.sanctionskit.com/api/v1/screenings`:
 
 ```json
 {
