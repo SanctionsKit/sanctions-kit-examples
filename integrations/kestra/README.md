@@ -56,7 +56,9 @@ iteration executions, uses the 2.0 outputs API, downloads the JSON/CSV files, an
 checks logs and outputs for the fake key.
 
 The server log, per-case results, isolation report and generated files go into
-`test-results/`. A parser or import pass is not a substitute for this run.
+`test-results/`. A failed assertion also saves bounded parent and Loop task logs
+and outputs, with fixture credentials redacted. A parser or import pass is not
+a substitute for this run.
 
 ## Intended sandbox setup after qualification
 

@@ -168,14 +168,14 @@ tasks:
         "onboardingApproved":false,
         "requestKey":{{ inputs.request_key | toJson }},
         "batch":{{ fromJson(outputs.poll_batch.body).data | toJson }},
-        "evidenceByRow":{{ outputs.collect_evidence.outputs | toJson | jq('map(select(.outputs.evidence != null) | {key: ((.item.value | tonumber) + 1 | tostring), value: .outputs.evidence}) | from_entries') | first | toJson }},
+        "evidenceByRow":{{ (outputs.collect_evidence.outputs | default([])) | toJson | jq('map(select(.outputs.evidence != null) | {key: ((.item.value | tonumber) + 1 | tostring), value: .outputs.evidence}) | from_entries') | first | toJson }},
         "nextStep":"Review each row and its evidence. A name-screening result does not approve onboarding."
       }
   - id: write_row_summary
     type: io.kestra.plugin.core.storage.Write
     extension: .json
     content: |
-      {% set evidenceByRow = outputs.collect_evidence.outputs | toJson | jq('map(select(.outputs.evidence != null) | {key: ((.item.value | tonumber) + 1 | tostring), value: .outputs.evidence}) | from_entries') | first %}
+      {% set evidenceByRow = (outputs.collect_evidence.outputs | default([])) | toJson | jq('map(select(.outputs.evidence != null) | {key: ((.item.value | tonumber) + 1 | tostring), value: .outputs.evidence}) | from_entries') | first %}
       [
         {% for row in fromJson(outputs.poll_batch.body).data.rows %}
         {"row_number":{{ row.row_number }},

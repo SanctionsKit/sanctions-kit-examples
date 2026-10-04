@@ -47,7 +47,7 @@ with log.open('w') as stream:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
-        for name in ['tests/native-results.json', 'tests/last-failure.json', 'synthetic-review-bundle.json', 'synthetic-row-summary.csv']:
+        for name in ['tests/native-results.json', 'tests/last-failure.json', 'tests/last-failure-diagnostics.json', 'synthetic-review-bundle.json', 'synthetic-row-summary.csv']:
             source = root / name
             if source.exists():
                 shutil.copy2(source, Path('/evidence') / source.name)

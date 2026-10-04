@@ -107,16 +107,50 @@ class Mock(BaseHTTPRequestHandler):
         self.respond(200, evidence)
 
 
-def api(path, data=None, content_type=None, method=None):
+def api(path, data=None, content_type=None, method=None, timeout=15):
     headers = {'Authorization': AUTH}
     if content_type: headers['Content-Type'] = content_type
     req = urllib.request.Request(KESTRA + '/api/v1/main' + path, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=15) as r:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             payload = r.read()
             return json.loads(payload) if 'json' in r.headers.get('Content-Type', '') else payload
     except urllib.error.HTTPError as e:
         raise RuntimeError(f'Local Kestra HTTP {e.code}: {e.read().decode()[:2000]}') from None
+
+
+def capture_failure(execution):
+    """Save bounded local task diagnostics without replacing the test failure."""
+    def fetch(path):
+        try:
+            return api(path, timeout=3)
+        except Exception as error:
+            return {'diagnostic_error_type': type(error).__name__}
+
+    family = [execution]
+    query = urllib.parse.urlencode({'filters[parentId][EQUALS]': execution['id'], 'filters[kind][EQUALS]': 'LOOP', 'size': 3})
+    children = fetch('/executions/search?' + query)
+    # The fixed fixture has two rows. Bound diagnostics even if an engine is faulty.
+    for child in children.get('results', [])[:2]:
+        member = fetch('/executions/' + child['id'])
+        if 'id' in member:
+            family.append(member)
+    snapshots = []
+    for member in family:
+        task_outputs = {}
+        tasks = [t for t in member.get('taskRunList', []) if t['taskId'] == 'collect_evidence' or t['state']['current'] == 'FAILED']
+        for task in tasks[:3]:
+            task_outputs[task['id']] = fetch('/outputs/tasks/' + member['id'] + '/' + task['id'])
+        snapshots.append({'execution': member, 'logs': fetch('/logs/' + member['id']), 'task_outputs': task_outputs})
+    serialized = json.dumps({'case': State.mode, 'loop_search': children, 'snapshots': snapshots}, indent=2)
+    # These are invented fixture credentials, but diagnostics should not expose them.
+    fixture_credentials = [MOCK_KEY, AUTH, AUTH.removeprefix('Basic '), 'LocalMockOnly123!']
+    credentials_seen = any(value in serialized for value in fixture_credentials)
+    for value in fixture_credentials:
+        serialized = serialized.replace(value, '[fixture credential redacted]')
+    diagnostics = json.loads(serialized)
+    diagnostics['fixture_credentials_redacted'] = credentials_seen
+    (ROOT / 'tests/last-failure-diagnostics.json').write_text(json.dumps(diagnostics, indent=2) + '\n')
 
 
 def execute(mode):
@@ -147,8 +181,10 @@ def main():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     records = []
+    execution = None
     try:
         for mode in modes:
+            execution = None
             execution = execute(mode)
             state = execution['state']['current']
             expected = 'SUCCESS' if mode in ('success', 'rate_limited_once', 'mixed', 'all_failed', 'cancelled') else 'FAILED'
@@ -230,6 +266,13 @@ def main():
             if mode in ('redirect', 'bad_batch_id'): assert len(State.calls) == 1
             if mode == 'counter_mismatch': assert not any('/results/' in c['path'] for c in State.calls)
             print(f'{mode}: {state}, {len(State.calls)} mock requests', flush=True)
+    except Exception:
+        if execution is not None:
+            try:
+                capture_failure(execution)
+            except Exception as error:
+                print(f'Failure diagnostics unavailable: {type(error).__name__}', flush=True)
+        raise
     finally:
         server.shutdown()
         (ROOT / 'tests/native-results.json').write_text(json.dumps({'runtime': 'Kestra 2.0.4', 'plugin': 'io.kestra.plugin:plugin-serdes:2.0.6', 'java': 'Official Temurin 25 JRE image pinned by digest', 'boundary': 'Native engine against loopback fictional HTTP mock only', 'cases': records}, indent=2) + '\n')
