@@ -34,6 +34,8 @@ npm --prefix integrations/windmill test
 
 [Node-RED](integrations/node-red/) includes an importable flow built with core nodes. Run a fictional screening, retrieve its evidence, and inspect a review record. It keeps credentials in the process environment and reuses a stable request key for manual retries. The README includes setup instructions and local runtime tests.
 
+[Kestra](integrations/kestra/) submits a fictional batch, waits for its final state, and exports retained evidence and a CSV row summary. It keeps failed and cancelled rows visible for review. The Kestra 2.0.4 flow passed 24 native scenarios against a local HTTP fixture in an isolated container.
+
 ## Make your first request
 
 1. [Create a workspace](https://www.sanctionskit.com/signup), then open [API keys](https://www.sanctionskit.com/dashboard/keys?environment=sandbox).
@@ -87,7 +89,7 @@ These scripts display responses for learning. When adapting them to an applicati
 
 `REQUEST_KEY` is sent as the `Idempotency-Key` header. Generate it once for a new screening. If a request times out or needs a retry, keep **the same key and the same body**. Rerun the script without repeating the key-generation command. A new subject or changed body needs a new key.
 
-The examples make one attempt and exit with a nonzero status on an HTTP or network error. They do not retry automatically. An error is an incomplete request, never a `no_match` result. See [idempotency](https://www.sanctionskit.com/docs/idempotency) and [error handling](https://www.sanctionskit.com/docs/errors) before adding retries to an application.
+The standalone language examples make one attempt and exit with a nonzero status on an HTTP or network error. They do not retry automatically. An error is an incomplete request, never a `no_match` result. See [idempotency](https://www.sanctionskit.com/docs/idempotency) and [error handling](https://www.sanctionskit.com/docs/errors) before adding retries to an application.
 
 ## Adapt the example
 

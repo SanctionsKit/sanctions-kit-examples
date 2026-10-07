@@ -1,0 +1,217 @@
+id: sanctionskit-batch-evidence
+namespace: company.sanctionskit
+description: |
+  Candidate for Kestra 2.0.4 native fixture CI. Not yet qualified for use.
+  Run two fictional contacts and collect row-level retained evidence.
+inputs:
+  - id: request_key
+    type: STRING
+    required: true
+    validator: ^[A-Za-z0-9_:.-]{8,128}$
+    description: A fresh key for a new batch. Reuse it when retrying the same batch.
+  - id: synthetic
+    type: BOOL
+    defaults: false
+    description: Confirm that this example contains fictional contacts only.
+variables:
+  api_base: https://www.sanctionskit.com/api/v1
+  subjects:
+    - subject:
+        name: Alex Morgan
+        entityType: person
+        birthDate: "1984"
+      package: sandbox@1
+      retention: standard
+      reference: example-customer-001
+    - subject:
+        name: Taylor Jordan
+        entityType: person
+        birthDate: "1979"
+      package: sandbox@1
+      retention: standard
+      reference: example-customer-002
+tasks:
+  - id: require_synthetic
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ inputs.synthetic == true }}"
+    errorMessage: Confirm the fictional contacts before running this sandbox example.
+  - id: submit_batch
+    type: io.kestra.plugin.core.http.Request
+    method: POST
+    uri: "{{ vars.api_base }}/batches"
+    headers:
+      Authorization: Bearer {{ secret('SANCTIONSKIT_API_KEY') }}
+      Content-Type: application/json
+      Idempotency-Key: "{{ inputs.request_key }}"
+    body: |
+      {"name":"Kestra fictional onboarding example","subjects":{{ vars.subjects | toJson }}}
+    timeout: PT20S
+    options:
+      followRedirects: false
+      allowFailed: false
+      timeout:
+        connectTimeout: PT5S
+        readIdleTimeout: PT10S
+  - id: check_acceptance
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ outputs.submit_batch.code == 202 }}"
+      - "{{ fromJson(outputs.submit_batch.body).data.id | toJson | jq('test(\"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$\")') | first }}"
+      - "{{ fromJson(outputs.submit_batch.body).data.total == 2 }}"
+      - "{{ fromJson(outputs.submit_batch.body).data.status == 'pending' }}"
+    errorMessage: Expected acceptance of exactly two rows. Acceptance is not a completed screening.
+  - id: wait_for_batch
+    type: io.kestra.plugin.core.flow.LoopUntil
+    condition: "{{ (fromJson(outputs.poll_batch.body).data.status == 'completed' or fromJson(outputs.poll_batch.body).data.status == 'failed' or fromJson(outputs.poll_batch.body).data.status == 'cancelled') }}"
+    failOnMaxReached: true
+    checkFrequency:
+      interval: PT2S
+      maxIterations: 30
+      maxDuration: PT2M
+    tasks:
+      - id: poll_batch
+        type: io.kestra.plugin.core.http.Request
+        method: GET
+        uri: "{{ vars.api_base }}/batches/{{ fromJson(outputs.submit_batch.body).data.id }}?limit=100&offset=0"
+        timeout: PT20S
+        options:
+          followRedirects: false
+          allowFailed: false
+          timeout:
+            connectTimeout: PT5S
+            readIdleTimeout: PT10S
+        headers:
+          Authorization: Bearer {{ secret('SANCTIONSKIT_API_KEY') }}
+          Content-Type: application/json
+      - id: check_poll_identity
+        type: io.kestra.plugin.core.execution.Assert
+        conditions:
+          - "{{ outputs.poll_batch.code == 200 }}"
+          - "{{ fromJson(outputs.poll_batch.body).data.id == fromJson(outputs.submit_batch.body).data.id }}"
+          - "{{ fromJson(outputs.poll_batch.body).data.environment == 'sandbox' }}"
+          - "{{ fromJson(outputs.poll_batch.body).data.total == 2 }}"
+          - "{{ (fromJson(outputs.poll_batch.body).data.status == 'pending' or fromJson(outputs.poll_batch.body).data.status == 'processing' or fromJson(outputs.poll_batch.body).data.status == 'completed' or fromJson(outputs.poll_batch.body).data.status == 'failed' or fromJson(outputs.poll_batch.body).data.status == 'cancelled') }}"
+        errorMessage: Batch identity, environment or state did not match the sandbox request.
+  - id: check_complete_page
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ fromJson(outputs.poll_batch.body).data.nextOffset == null }}"
+      - "{{ fromJson(outputs.poll_batch.body).data.rows | length == 2 }}"
+      - "{{ fromJson(outputs.poll_batch.body).data.rows[0].row_number == 1 }}"
+      - "{{ fromJson(outputs.poll_batch.body).data.rows[1].row_number == 2 }}"
+      - "{{ fromJson(outputs.poll_batch.body).data.completed == (outputs.poll_batch.body | jq('.data.rows | map(select(.status == \"completed\")) | length') | first) }}"
+      - "{{ fromJson(outputs.poll_batch.body).data.failed == (outputs.poll_batch.body | jq('.data.rows | map(select(.status == \"failed\")) | length') | first) }}"
+    errorMessage: This two-row starter requires one complete ordered page. Stop before using partial or unexpected rows.
+  - id: collect_evidence
+    type: io.kestra.plugin.core.flow.Loop
+    values:
+      - "0"
+      - "1"
+    concurrencyLimit: 1
+    tasks:
+      - id: check_row
+        type: io.kestra.plugin.core.execution.Assert
+        conditions:
+          - "{{ (fromJson(outputs.poll_batch.body).data.rows[item.value | number].status == 'completed' or fromJson(outputs.poll_batch.body).data.rows[item.value | number].status == 'failed' or fromJson(outputs.poll_batch.body).data.rows[item.value | number].status == 'cancelled') }}"
+        errorMessage: A terminal batch still contains an unfinished row.
+      - id: completed_row
+        type: io.kestra.plugin.core.flow.If
+        condition: "{{ fromJson(outputs.poll_batch.body).data.rows[item.value | number].status == 'completed' }}"
+        then:
+          - id: check_screening_id
+            type: io.kestra.plugin.core.execution.Assert
+            conditions:
+              - "{{ fromJson(outputs.poll_batch.body).data.rows[item.value | number].screening_id | toJson | jq('test(\"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$\")') | first }}"
+          - id: fetch_evidence
+            type: io.kestra.plugin.core.http.Request
+            method: GET
+            uri: "{{ vars.api_base }}/results/{{ fromJson(outputs.poll_batch.body).data.rows[item.value | number].screening_id }}/evidence"
+            timeout: PT20S
+            options:
+              followRedirects: false
+              allowFailed: false
+              timeout:
+                connectTimeout: PT5S
+                readIdleTimeout: PT10S
+            headers:
+              Authorization: Bearer {{ secret('SANCTIONSKIT_API_KEY') }}
+              Content-Type: application/json
+          - id: check_evidence
+            type: io.kestra.plugin.core.execution.Assert
+            conditions:
+              - "{{ outputs.fetch_evidence.code == 200 }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).format == 'sanctionskit-evidence@1' }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).result.id == fromJson(outputs.poll_batch.body).data.rows[item.value | number].screening_id }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).result.environment == 'sandbox' }}"
+              - "{{ (fromJson(outputs.fetch_evidence.body).result.status == 'no_match' or fromJson(outputs.fetch_evidence.body).result.status == 'potential_match') }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).retention == 'standard' }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).retainedInputs == true }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).result.versions.package == 'sandbox@1' }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).result.status == 'no_match' ? fromJson(outputs.fetch_evidence.body).result.matches | length == 0 : fromJson(outputs.fetch_evidence.body).result.matches | length > 0 }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).reference == vars.subjects[item.value | number].reference }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).subject == vars.subjects[item.value | number].subject }}"
+              - "{{ fromJson(outputs.fetch_evidence.body).request == vars.subjects[item.value | number] }}"
+            errorMessage: Retained evidence does not match this sandbox batch row and fictional contact.
+    fetchType: FETCH
+    outputs:
+      - id: evidence
+        type: JSON
+        required: false
+        value: "{{ outputs.fetch_evidence is defined ? fromJson(outputs.fetch_evidence.body) : null }}"
+  - id: write_review_bundle
+    type: io.kestra.plugin.core.storage.Write
+    extension: .json
+    content: |
+      {
+        "synthetic":true,
+        "onboardingApproved":false,
+        "requestKey":{{ inputs.request_key | toJson }},
+        "batch":{{ fromJson(outputs.poll_batch.body).data | toJson }},
+        "evidenceByRow":{{ (outputs.collect_evidence.outputs | default([])) | toJson | jq('map(select(.outputs.evidence != null) | {key: ((.item.value | tonumber) + 1 | tostring), value: .outputs.evidence}) | from_entries') | first | toJson }},
+        "nextStep":"Review each row and its evidence. A name-screening result does not approve onboarding."
+      }
+  - id: write_row_summary
+    type: io.kestra.plugin.core.storage.Write
+    extension: .json
+    content: |
+      {% set evidenceByRow = (outputs.collect_evidence.outputs | default([])) | toJson | jq('map(select(.outputs.evidence != null) | {key: ((.item.value | tonumber) + 1 | tostring), value: .outputs.evidence}) | from_entries') | first %}
+      [
+        {% for row in fromJson(outputs.poll_batch.body).data.rows %}
+        {"row_number":{{ row.row_number }},
+         "reference":{{ vars.subjects[row.row_number - 1].reference | toJson }},
+         "row_status":{{ row.status | toJson }},
+         "screening_id":{{ row.screening_id | toJson }},
+         "screening_status":{{ (row.status == 'completed' ? evidenceByRow[row.row_number | string].result.status : '') | toJson }},
+         "error_code":{{ (row.error == null ? '' : row.error.code) | toJson }},
+         "synthetic":true,"onboarding_approved":false}{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+  - id: summary_to_ion
+    type: io.kestra.plugin.serdes.json.JsonToIon
+    from: "{{ outputs.write_row_summary.uri }}"
+    newLine: false
+    version: 2.0.6
+  - id: summary_to_csv
+    type: io.kestra.plugin.serdes.csv.IonToCsv
+    from: "{{ outputs.summary_to_ion.uri }}"
+    header: true
+    version: 2.0.6
+outputs:
+  - id: review_bundle
+    type: FILE
+    value: "{{ outputs.write_review_bundle.uri | default(null) }}"
+  - id: row_summary
+    type: FILE
+    value: "{{ outputs.summary_to_csv.uri | default(null) }}"
+  - id: batch_status
+    type: STRING
+    value: "{{ outputs.poll_batch is defined ? fromJson(outputs.poll_batch.body).data.status : 'not_collected' }}"
+triggers:
+  - id: optional_daily_example
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 9 * * *
+    disabled: true
+    inputs:
+      synthetic: true
+      request_key: kestra-example-{{ trigger.date | date('yyyyMMdd') }}
