@@ -1,0 +1,242 @@
+{
+  "format": "sanctionskit-supplier-review-demo@1",
+  "executionMode": "offline_fixture",
+  "listId": "demo-suppliers-v1",
+  "rowCount": 9,
+  "attempts": 4,
+  "maxAttempts": 6,
+  "stopReason": "coverage_unavailable",
+  "counts": {
+    "review": 1,
+    "no_match": 1,
+    "duplicate": 1,
+    "error": 4,
+    "unavailable": 2
+  },
+  "storage": "n8n_execution_output_only",
+  "evidenceBundleRetrieved": false,
+  "limitations": "No supplier is approved or cleared. No match applies only to the selected synthetic coverage and supplied identity. This run output is not a durable external register or a retained evidence export.",
+  "rows": [
+    {
+      "rowNumber": 1,
+      "supplierId": "supplier-001",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-001:1",
+      "supplierName": "Example Meridian Parts Ltd",
+      "rowStatus": "review",
+      "reason": "candidates_need_review",
+      "attempted": true,
+      "businessDecision": "not_decided",
+      "screeningId": "00000000-0000-4000-8000-000000000001",
+      "screeningStatus": "potential_match",
+      "candidateCount": 1,
+      "duplicateOfRow": null,
+      "result": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "environment": "sandbox",
+        "status": "potential_match",
+        "createdAt": "2026-10-06T12:00:00.000Z",
+        "matches": [
+          {
+            "record": {
+              "id": "synthetic-supplier-001",
+              "sourceId": "sandbox-synthetic",
+              "entityType": "organization",
+              "authority": "SanctionsKit synthetic fixture",
+              "list": "Local demonstration only",
+              "names": [
+                {
+                  "value": "Example Meridian Parts Ltd",
+                  "kind": "primary"
+                }
+              ],
+              "identifiers": [],
+              "birthDates": [],
+              "addresses": [],
+              "nationalities": [],
+              "designations": [],
+              "extensions": {},
+              "sourceUrl": "https://www.sanctionskit.com/docs/onboarding"
+            },
+            "score": 100,
+            "evidence": [
+              {
+                "field": "name",
+                "queryValue": "Example Meridian Parts Ltd",
+                "sourceValue": "Example Meridian Parts Ltd",
+                "method": "fixture",
+                "contribution": 100,
+                "explanation": "Invented local fixture; not an API screening or real designation."
+              }
+            ],
+            "conflicts": []
+          }
+        ],
+        "coverage": [
+          {
+            "sourceId": "sandbox-synthetic",
+            "version": "1",
+            "retrievedAt": "2026-10-06T12:00:00.000Z",
+            "fresh": true
+          }
+        ],
+        "versions": {
+          "dataset": "sandbox-synthetic-v1",
+          "matchingEngine": "deterministic-1.1.1",
+          "policy": "review-1.1.0",
+          "package": "sandbox@1"
+        },
+        "disclaimer": "Synthetic fixture only. Potential matches require review. No match is limited to selected sources and supplied identity; it is not legal clearance. Scores are not probabilities of wrongdoing."
+      }
+    },
+    {
+      "rowNumber": 2,
+      "supplierId": "supplier-002",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-002:1",
+      "supplierName": "Example Juniper Packing Ltd",
+      "rowStatus": "no_match",
+      "reason": "no_candidates_in_selected_coverage",
+      "attempted": true,
+      "businessDecision": "not_decided",
+      "screeningId": "00000000-0000-4000-8000-000000000002",
+      "screeningStatus": "no_match",
+      "candidateCount": 0,
+      "duplicateOfRow": null,
+      "result": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "environment": "sandbox",
+        "status": "no_match",
+        "createdAt": "2026-10-06T12:00:00.000Z",
+        "matches": [],
+        "coverage": [
+          {
+            "sourceId": "sandbox-synthetic",
+            "version": "1",
+            "retrievedAt": "2026-10-06T12:00:00.000Z",
+            "fresh": true
+          }
+        ],
+        "versions": {
+          "dataset": "sandbox-synthetic-v1",
+          "matchingEngine": "deterministic-1.1.1",
+          "policy": "review-1.1.0",
+          "package": "sandbox@1"
+        },
+        "disclaimer": "Synthetic fixture only. Potential matches require review. No match is limited to selected sources and supplied identity; it is not legal clearance. Scores are not probabilities of wrongdoing."
+      }
+    },
+    {
+      "rowNumber": 3,
+      "supplierId": "supplier-001",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-001:1",
+      "supplierName": "Example Meridian Parts Ltd",
+      "rowStatus": "duplicate",
+      "reason": "identical_request_in_this_run",
+      "attempted": false,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": 1,
+      "result": null
+    },
+    {
+      "rowNumber": 4,
+      "supplierId": "supplier-003",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-003:1",
+      "supplierName": "Example Beacon Shipping Ltd",
+      "rowStatus": "error",
+      "reason": "duplicate_key_conflict",
+      "attempted": false,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": null,
+      "result": null
+    },
+    {
+      "rowNumber": 5,
+      "supplierId": "supplier-003",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-003:1",
+      "supplierName": "Example Beacon Shipping Holdings Ltd",
+      "rowStatus": "error",
+      "reason": "duplicate_key_conflict",
+      "attempted": false,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": null,
+      "result": null
+    },
+    {
+      "rowNumber": 6,
+      "supplierId": "supplier-004",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-004:1",
+      "supplierName": "X",
+      "rowStatus": "error",
+      "reason": "invalid_supplier_row",
+      "attempted": false,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": null,
+      "result": null
+    },
+    {
+      "rowNumber": 7,
+      "supplierId": "supplier-005",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-005:1",
+      "supplierName": "Example Orchard Metals Ltd",
+      "rowStatus": "error",
+      "reason": "invalid_request",
+      "attempted": true,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": null,
+      "result": null
+    },
+    {
+      "rowNumber": 8,
+      "supplierId": "supplier-006",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-006:1",
+      "supplierName": "Example Cedar Supplies Ltd",
+      "rowStatus": "unavailable",
+      "reason": "coverage_unavailable",
+      "attempted": true,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": null,
+      "result": null
+    },
+    {
+      "rowNumber": 9,
+      "supplierId": "supplier-007",
+      "revision": 1,
+      "rowKey": "sk-supplier:demo-suppliers-v1:supplier-007:1",
+      "supplierName": "Example Harbor Components Ltd",
+      "rowStatus": "unavailable",
+      "reason": "run_stopped:coverage_unavailable",
+      "attempted": false,
+      "businessDecision": "not_decided",
+      "screeningId": null,
+      "screeningStatus": null,
+      "candidateCount": null,
+      "duplicateOfRow": null,
+      "result": null
+    }
+  ]
+}
