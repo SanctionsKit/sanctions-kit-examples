@@ -1,19 +1,15 @@
-# Kestra 2.0 batch-screening candidate
+# Kestra batch screening and evidence
 
-This is a candidate for native fixture testing on Kestra 2.0.4. It has passed the
-2.0.4 server's flow import validation. It has not yet passed native execution on
-that version, so it is not ready to use as a published integration.
+This Kestra 2.0.4 flow submits two fictional contacts to the SanctionsKit synthetic
+sandbox, waits for the batch to finish, and collects retained evidence with a CSV
+row summary. Completed, failed and cancelled rows stay visible. A successful
+collection does not approve onboarding or mean that every row screened successfully.
 
-The flow submits two fictional contacts to the SanctionsKit synthetic sandbox,
-waits for the batch to finish, and collects retained evidence with a CSV row
-summary. Completed, failed and cancelled rows stay visible. A successful collection
-does not approve onboarding or mean that every row screened successfully.
-
-The maintenance-version implementation passed 24 native mock scenarios on Kestra
-1.3.41. That result does not establish 2.0 compatibility. This candidate replaces
-`ForEach` with `Loop`, uses explicit per-iteration outputs, removes `pluginDefaults`,
-updates the boolean input and HTTP timeout fields, and uses the 2.0 output API in
-the tests. Native execution is the next gate.
+All 24 native fixture scenarios passed on Kestra 2.0.4 with serdes 2.0.6 and
+Temurin 25 in an isolated container. The [verified CI run](https://github.com/SanctionsKit/sanctions-kit-examples/actions/runs/37181224466)
+used a local fictional HTTP server with Docker networking disabled. This verifies
+the workflow and its error handling against fixtures; a hosted sandbox run remains
+separate.
 
 ## Isolated fixture test
 
@@ -60,7 +56,7 @@ The server log, per-case results, isolation report and generated files go into
 and outputs, with fixture credentials redacted. A parser or import pass is not
 a substitute for this run.
 
-## Intended sandbox setup after qualification
+## Sandbox setup
 
 Create a free [developer workspace](https://www.sanctionskit.com/signup?workflow=api)
 and a sandbox key with `batches:write` and `results:read`. Save the key as the Kestra
