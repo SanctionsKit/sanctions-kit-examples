@@ -1,0 +1,325 @@
+{
+  "id": "SanctionsKitOfflineReview",
+  "name": "SanctionsKit onboarding review - OFFLINE fixtures",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual demonstration",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:potential_match:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"potential_match\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:coverage_unavailable:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"coverage_unavailable\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:no_match:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"no_match\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:invalid_api_key:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"invalid_api_key\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:stale_coverage:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"stale_coverage\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:evidence_error:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"evidence_error\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:idempotency_conflict:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"idempotency_conflict\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:evidence_wrong_id:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"evidence_wrong_id\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:no_match_missing_coverage:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"no_match_missing_coverage\"\n  },\n  {\n    \"synthetic\": true,\n    \"eventId\": \"onboarding:fixture:unknown_error_shape:v1\",\n    \"subject\": {\n      \"name\": \"Alex Morgan\",\n      \"entityType\": \"person\",\n      \"birthDate\": \"1984\"\n    },\n    \"fixtureCase\": \"unknown_error_shape\"\n  }\n].map(json => ({json}));"
+      },
+      "id": "synthetic-onboarding-events",
+      "name": "Synthetic onboarding events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Inlined into the importable workflows by build.cjs. No network or filesystem access.\nfunction isObject(value) {\n  return value !== null && typeof value === 'object' && !Array.isArray(value);\n}\n\nfunction canonical(value) {\n  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';\n  if (isObject(value)) return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';\n  return JSON.stringify(value);\n}\n\nfunction mapEvent(event) {\n  // This example intentionally accepts only its explicitly synthetic input shape.\n  // Invalid input stops before the API node; it is never a no-match outcome.\n  if (!isObject(event) || event.synthetic !== true || typeof event.eventId !== 'string' || !/^[A-Za-z0-9_:.-]{4,124}$/.test(event.eventId)) {\n    throw new Error('Provide a synthetic event with a stable eventId of 4-124 allowed characters');\n  }\n  if (!isObject(event.subject) || typeof event.subject.name !== 'string' || event.subject.name.trim().length < 2 || event.subject.name.trim().length > 300 || event.subject.entityType !== 'person') {\n    throw new Error('This example requires a fictional person with a name');\n  }\n  if (event.subject.birthDate !== undefined && (typeof event.subject.birthDate !== 'string' || !/^(?!0000)\\d{4}$/.test(event.subject.birthDate))) {\n    throw new Error('This example accepts only a known birth year, or omit birthDate');\n  }\n  const subject = { name: event.subject.name.trim(), entityType: 'person', identifiers: [] };\n  if (event.subject.birthDate !== undefined) subject.birthDate = event.subject.birthDate;\n  return {\n    eventId: event.eventId,\n    requestKey: 'n8n:' + event.eventId,\n    request: { subject, package: 'sandbox@1', reference: event.eventId, retention: 'standard' },\n    onboardingDecision: 'not_made',\n    ...(event.fixtureCase ? { fixtureCase: event.fixtureCase } : {}),\n  };\n}\n\nfunction failure(context, stage, errorCode, route = 'request_error') {\n  return { ...context, route, stage, errorCode, onboardingDecision: 'not_made' };\n}\n\nfunction nodeFailure(response, context, stage) {\n  if (!isObject(response) || !Object.hasOwn(response, 'error')) return null;\n  // v0.1.0 continued errors expose a sanitized message, not an HTTP status/code object.\n  // Recognize only that exact format. Unrecognized errors remain incomplete requests.\n  const match = typeof response.error === 'string' && /^SanctionsKit request failed \\(([a-z_]{1,80})\\)$/.exec(response.error);\n  const code = match ? match[1] : 'unclassified_node_error';\n  return failure(context, stage, code, ['coverage_unavailable', 'stale_coverage'].includes(code) ? 'coverage_unavailable' : 'request_error');\n}\n\nfunction resultIssue(result) {\n  if (!isObject(result) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result.id || '') || result.environment !== 'sandbox' || !['potential_match', 'no_match'].includes(result.status) || !Array.isArray(result.matches) || typeof result.createdAt !== 'string' || !Number.isFinite(Date.parse(result.createdAt)) || typeof result.disclaimer !== 'string' || !result.disclaimer.trim() || !isObject(result.versions) || !['dataset', 'matchingEngine', 'policy'].every(k => typeof result.versions[k] === 'string' && result.versions[k])) {\n    return 'invalid_result';\n  }\n  if (result.versions.package !== 'sandbox@1') return 'unexpected_coverage_package';\n  if ((result.status === 'no_match' && result.matches.length !== 0) || (result.status === 'potential_match' && result.matches.length === 0)) return 'inconsistent_result';\n  if (!result.matches.every(candidate => {\n    if (!isObject(candidate) || !Number.isFinite(candidate.score) || candidate.score < 0 || candidate.score > 100 || !Array.isArray(candidate.evidence) || !Array.isArray(candidate.conflicts) || !candidate.conflicts.every(value => typeof value === 'string')) return false;\n    if (!candidate.evidence.every(value => isObject(value) && ['field', 'queryValue', 'sourceValue', 'method', 'explanation'].every(k => typeof value[k] === 'string') && Number.isFinite(value.contribution))) return false;\n    const record = candidate.record;\n    return isObject(record) && ['id', 'sourceId', 'authority', 'list', 'sourceUrl'].every(k => typeof record[k] === 'string') && ['person', 'organization', 'vessel', 'aircraft', 'other'].includes(record.entityType) && ['names', 'identifiers', 'birthDates', 'addresses', 'nationalities', 'designations'].every(k => Array.isArray(record[k])) && record.names.length > 0 && record.names.every(name => isObject(name) && typeof name.value === 'string' && ['primary', 'alias'].includes(name.kind)) && isObject(record.extensions);\n  })) return 'invalid_candidate_evidence';\n  if (!Array.isArray(result.coverage) || result.coverage.length === 0 || !result.coverage.every(c => isObject(c) && c.fresh === true && typeof c.sourceId === 'string' && c.sourceId && typeof c.version === 'string' && c.version && typeof c.retrievedAt === 'string' && Number.isFinite(Date.parse(c.retrievedAt)))) return 'coverage_unavailable';\n  return null;\n}\n\nfunction classifyScreening(response, context) {\n  const failed = nodeFailure(response, context, 'screening');\n  if (failed) return failed;\n  const issue = resultIssue(response);\n  if (issue) return failure(context, 'screening', issue, issue === 'coverage_unavailable' ? issue : 'request_error');\n  return { ...context, route: 'fetch_evidence', result: response, screeningId: response.id };\n}\n\nfunction finishEvidence(evidence, context) {\n  const failed = nodeFailure(evidence, context, 'evidence');\n  if (failed) return failed;\n  if (!isObject(evidence) || evidence.format !== 'sanctionskit-evidence@1') return failure(context, 'evidence', 'invalid_evidence');\n  const issue = resultIssue(evidence.result);\n  if (issue) return failure(context, 'evidence', issue, issue === 'coverage_unavailable' ? issue : 'request_error');\n  // Preserve the entire document, but compare all original result fields to the\n  // result that triggered this fetch. Object key order is immaterial.\n  if (!Object.keys(context.result).every(k => canonical(context.result[k]) === canonical(evidence.result[k]))) return failure(context, 'evidence', 'evidence_result_mismatch');\n  if (evidence.retention !== 'standard' || evidence.retainedInputs !== true || !Object.hasOwn(evidence, 'expires_at') || !Object.hasOwn(evidence, 'replayLimit') || evidence.reference !== context.eventId || canonical(evidence.subject) !== canonical(context.request.subject) || canonical(evidence.request) !== canonical(context.request)) return failure(context, 'evidence', 'evidence_input_mismatch');\n  return {\n    ...context,\n    route: context.result.status === 'potential_match' ? 'review_required' : 'no_match_policy_review',\n    stage: 'evidence_complete',\n    evidence,\n    onboardingDecision: 'not_made',\n  };\n}\n\nfunction outputIndex(route) {\n  return ({ review_required: 0, no_match_policy_review: 1, request_error: 2, coverage_unavailable: 3 })[route] ?? 2;\n}\n\n\nreturn $input.all().map((item, i) => ({ json: mapEvent(item.json), pairedItem: { item: i } }));"
+      },
+      "id": "map-onboarding-event",
+      "name": "Map onboarding event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Pure fixtures. build.cjs inlines these only into the explicitly OFFLINE workflow.\nfunction fixtureScreening(context, baseEvidence) {\n  const name = context.fixtureCase;\n  if (['coverage_unavailable', 'stale_coverage', 'invalid_api_key', 'idempotency_conflict'].includes(name)) return { error: `SanctionsKit request failed (${name})` };\n  if (name === 'unknown_error_shape') return { error: { code: 'coverage_unavailable' } };\n  const result = JSON.parse(JSON.stringify(baseEvidence.result));\n  if (name.startsWith('no_match')) { result.status = 'no_match'; result.matches = []; }\n  if (name === 'no_match_missing_coverage') result.coverage = [];\n  return result;\n}\n\nfunction fixtureEvidence(context, baseEvidence) {\n  if (context.fixtureCase === 'evidence_error') return { error: 'SanctionsKit request failed (result_expired)' };\n  const evidence = JSON.parse(JSON.stringify(baseEvidence));\n  evidence.result = JSON.parse(JSON.stringify(context.result));\n  evidence.subject = context.request.subject;\n  evidence.reference = context.eventId;\n  evidence.request = context.request;\n  if (context.fixtureCase === 'evidence_wrong_id') evidence.result.id = '00000000-0000-4000-8000-000000000099';\n  return evidence;\n}\n\n\nconst base = {\"format\":\"sanctionskit-evidence@1\",\"result\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"status\":\"potential_match\",\"matches\":[{\"score\":96,\"record\":{\"id\":\"sandbox:person-001\",\"list\":\"Synthetic demonstration records\",\"names\":[{\"kind\":\"primary\",\"value\":\"Alex Morgan\"},{\"kind\":\"alias\",\"value\":\"Алекс Морган\"}],\"sourceId\":\"sandbox-synthetic\",\"addresses\":[],\"authority\":\"SanctionsKit synthetic examples\",\"sourceUrl\":\"https://sanctionskit.com/demo\",\"birthDates\":[{\"value\":\"1984\",\"original\":\"1984\",\"precision\":\"year\"}],\"entityType\":\"person\",\"extensions\":{\"synthetic\":true},\"identifiers\":[{\"type\":\"passport\",\"value\":\"DEMO-001\",\"issuer\":\"Fictional authority\"}],\"designations\":[{\"wording\":\"Invented example, not a government designation.\",\"category\":\"other\",\"programs\":[\"Synthetic demonstration only\"],\"legalReferences\":[]}],\"nationalities\":[]},\"evidence\":[{\"field\":\"name\",\"method\":\"normalized_name_exact\",\"queryValue\":\"Alex Morgan\",\"explanation\":\"Name similarity is a review signal, not a probability or finding of wrongdoing.\",\"sourceValue\":\"Alex Morgan\",\"contribution\":96}],\"conflicts\":[],\"assessment\":{\"name\":{\"method\":\"normalized_name_exact\",\"aliasKind\":\"primary\",\"similarity\":96,\"aliasQuality\":\"unknown\"},\"country\":{\"status\":\"not_supplied\"},\"birthDate\":{\"status\":\"not_supplied\"},\"alertBasis\":\"name\",\"entityType\":{\"status\":\"agreement\"},\"reviewTier\":\"name_only\",\"identifiers\":{\"status\":\"not_supplied\",\"matched\":0,\"conflicts\":0,\"issuerUnknown\":0,\"issuerAgreements\":0},\"hasConflicts\":false,\"sameNameCandidates\":1}}],\"coverage\":[{\"fresh\":true,\"version\":\"1\",\"sourceId\":\"sandbox-synthetic\",\"retrievedAt\":\"2026-09-17T12:00:00.000Z\"}],\"matching\":{\"profile\":\"standard\",\"version\":\"review-1.2.0\",\"nameThreshold\":78,\"retrievalVersion\":\"indexed-1.1.1\",\"corroboratedNameThreshold\":75},\"versions\":{\"policy\":\"review-1.2.0\",\"dataset\":\"sandbox-synthetic-v1\",\"package\":\"sandbox@1\",\"matchingEngine\":\"deterministic-1.2.0\"},\"createdAt\":\"2026-09-17T12:00:00.000Z\",\"disclaimer\":\"Potential matches support analyst review. No match means no match in the selected sources and dataset, not legal clearance. Scores and evidence categories support review; they are not probabilities of identity or wrongdoing.\",\"environment\":\"sandbox\"},\"retention\":\"standard\",\"expires_at\":null,\"subject\":{\"name\":\"Alex Morgan\",\"entityType\":\"person\",\"birthDate\":\"1984\"},\"reference\":\"example-customer-001\",\"request\":{\"subject\":{\"name\":\"Alex Morgan\",\"entityType\":\"person\",\"birthDate\":\"1984\"},\"package\":\"sandbox@1\",\"reference\":\"example-customer-001\",\"retention\":\"standard\"},\"retainedInputs\":true,\"replayLimit\":null};\nreturn $input.all().map((item, i) => ({ json: fixtureScreening(item.json, base), pairedItem: { item: i } }));"
+      },
+      "id": "screen-synthetic-subject",
+      "name": "Screen synthetic subject",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Inlined into the importable workflows by build.cjs. No network or filesystem access.\nfunction isObject(value) {\n  return value !== null && typeof value === 'object' && !Array.isArray(value);\n}\n\nfunction canonical(value) {\n  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';\n  if (isObject(value)) return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';\n  return JSON.stringify(value);\n}\n\nfunction mapEvent(event) {\n  // This example intentionally accepts only its explicitly synthetic input shape.\n  // Invalid input stops before the API node; it is never a no-match outcome.\n  if (!isObject(event) || event.synthetic !== true || typeof event.eventId !== 'string' || !/^[A-Za-z0-9_:.-]{4,124}$/.test(event.eventId)) {\n    throw new Error('Provide a synthetic event with a stable eventId of 4-124 allowed characters');\n  }\n  if (!isObject(event.subject) || typeof event.subject.name !== 'string' || event.subject.name.trim().length < 2 || event.subject.name.trim().length > 300 || event.subject.entityType !== 'person') {\n    throw new Error('This example requires a fictional person with a name');\n  }\n  if (event.subject.birthDate !== undefined && (typeof event.subject.birthDate !== 'string' || !/^(?!0000)\\d{4}$/.test(event.subject.birthDate))) {\n    throw new Error('This example accepts only a known birth year, or omit birthDate');\n  }\n  const subject = { name: event.subject.name.trim(), entityType: 'person', identifiers: [] };\n  if (event.subject.birthDate !== undefined) subject.birthDate = event.subject.birthDate;\n  return {\n    eventId: event.eventId,\n    requestKey: 'n8n:' + event.eventId,\n    request: { subject, package: 'sandbox@1', reference: event.eventId, retention: 'standard' },\n    onboardingDecision: 'not_made',\n    ...(event.fixtureCase ? { fixtureCase: event.fixtureCase } : {}),\n  };\n}\n\nfunction failure(context, stage, errorCode, route = 'request_error') {\n  return { ...context, route, stage, errorCode, onboardingDecision: 'not_made' };\n}\n\nfunction nodeFailure(response, context, stage) {\n  if (!isObject(response) || !Object.hasOwn(response, 'error')) return null;\n  // v0.1.0 continued errors expose a sanitized message, not an HTTP status/code object.\n  // Recognize only that exact format. Unrecognized errors remain incomplete requests.\n  const match = typeof response.error === 'string' && /^SanctionsKit request failed \\(([a-z_]{1,80})\\)$/.exec(response.error);\n  const code = match ? match[1] : 'unclassified_node_error';\n  return failure(context, stage, code, ['coverage_unavailable', 'stale_coverage'].includes(code) ? 'coverage_unavailable' : 'request_error');\n}\n\nfunction resultIssue(result) {\n  if (!isObject(result) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result.id || '') || result.environment !== 'sandbox' || !['potential_match', 'no_match'].includes(result.status) || !Array.isArray(result.matches) || typeof result.createdAt !== 'string' || !Number.isFinite(Date.parse(result.createdAt)) || typeof result.disclaimer !== 'string' || !result.disclaimer.trim() || !isObject(result.versions) || !['dataset', 'matchingEngine', 'policy'].every(k => typeof result.versions[k] === 'string' && result.versions[k])) {\n    return 'invalid_result';\n  }\n  if (result.versions.package !== 'sandbox@1') return 'unexpected_coverage_package';\n  if ((result.status === 'no_match' && result.matches.length !== 0) || (result.status === 'potential_match' && result.matches.length === 0)) return 'inconsistent_result';\n  if (!result.matches.every(candidate => {\n    if (!isObject(candidate) || !Number.isFinite(candidate.score) || candidate.score < 0 || candidate.score > 100 || !Array.isArray(candidate.evidence) || !Array.isArray(candidate.conflicts) || !candidate.conflicts.every(value => typeof value === 'string')) return false;\n    if (!candidate.evidence.every(value => isObject(value) && ['field', 'queryValue', 'sourceValue', 'method', 'explanation'].every(k => typeof value[k] === 'string') && Number.isFinite(value.contribution))) return false;\n    const record = candidate.record;\n    return isObject(record) && ['id', 'sourceId', 'authority', 'list', 'sourceUrl'].every(k => typeof record[k] === 'string') && ['person', 'organization', 'vessel', 'aircraft', 'other'].includes(record.entityType) && ['names', 'identifiers', 'birthDates', 'addresses', 'nationalities', 'designations'].every(k => Array.isArray(record[k])) && record.names.length > 0 && record.names.every(name => isObject(name) && typeof name.value === 'string' && ['primary', 'alias'].includes(name.kind)) && isObject(record.extensions);\n  })) return 'invalid_candidate_evidence';\n  if (!Array.isArray(result.coverage) || result.coverage.length === 0 || !result.coverage.every(c => isObject(c) && c.fresh === true && typeof c.sourceId === 'string' && c.sourceId && typeof c.version === 'string' && c.version && typeof c.retrievedAt === 'string' && Number.isFinite(Date.parse(c.retrievedAt)))) return 'coverage_unavailable';\n  return null;\n}\n\nfunction classifyScreening(response, context) {\n  const failed = nodeFailure(response, context, 'screening');\n  if (failed) return failed;\n  const issue = resultIssue(response);\n  if (issue) return failure(context, 'screening', issue, issue === 'coverage_unavailable' ? issue : 'request_error');\n  return { ...context, route: 'fetch_evidence', result: response, screeningId: response.id };\n}\n\nfunction finishEvidence(evidence, context) {\n  const failed = nodeFailure(evidence, context, 'evidence');\n  if (failed) return failed;\n  if (!isObject(evidence) || evidence.format !== 'sanctionskit-evidence@1') return failure(context, 'evidence', 'invalid_evidence');\n  const issue = resultIssue(evidence.result);\n  if (issue) return failure(context, 'evidence', issue, issue === 'coverage_unavailable' ? issue : 'request_error');\n  // Preserve the entire document, but compare all original result fields to the\n  // result that triggered this fetch. Object key order is immaterial.\n  if (!Object.keys(context.result).every(k => canonical(context.result[k]) === canonical(evidence.result[k]))) return failure(context, 'evidence', 'evidence_result_mismatch');\n  if (evidence.retention !== 'standard' || evidence.retainedInputs !== true || !Object.hasOwn(evidence, 'expires_at') || !Object.hasOwn(evidence, 'replayLimit') || evidence.reference !== context.eventId || canonical(evidence.subject) !== canonical(context.request.subject) || canonical(evidence.request) !== canonical(context.request)) return failure(context, 'evidence', 'evidence_input_mismatch');\n  return {\n    ...context,\n    route: context.result.status === 'potential_match' ? 'review_required' : 'no_match_policy_review',\n    stage: 'evidence_complete',\n    evidence,\n    onboardingDecision: 'not_made',\n  };\n}\n\nfunction outputIndex(route) {\n  return ({ review_required: 0, no_match_policy_review: 1, request_error: 2, coverage_unavailable: 3 })[route] ?? 2;\n}\n\n\nreturn $input.all().map((item, i) => ({ json: classifyScreening(item.json, $(\"Map onboarding event\").itemMatching(i).json), pairedItem: { item: i } }));"
+      },
+      "id": "classify-screening-response",
+      "name": "Classify screening response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 2,
+        "output": "={{ $json.route === \"fetch_evidence\" ? 0 : 1 }}"
+      },
+      "id": "fetch-or-incomplete",
+      "name": "Fetch evidence or incomplete",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Pure fixtures. build.cjs inlines these only into the explicitly OFFLINE workflow.\nfunction fixtureScreening(context, baseEvidence) {\n  const name = context.fixtureCase;\n  if (['coverage_unavailable', 'stale_coverage', 'invalid_api_key', 'idempotency_conflict'].includes(name)) return { error: `SanctionsKit request failed (${name})` };\n  if (name === 'unknown_error_shape') return { error: { code: 'coverage_unavailable' } };\n  const result = JSON.parse(JSON.stringify(baseEvidence.result));\n  if (name.startsWith('no_match')) { result.status = 'no_match'; result.matches = []; }\n  if (name === 'no_match_missing_coverage') result.coverage = [];\n  return result;\n}\n\nfunction fixtureEvidence(context, baseEvidence) {\n  if (context.fixtureCase === 'evidence_error') return { error: 'SanctionsKit request failed (result_expired)' };\n  const evidence = JSON.parse(JSON.stringify(baseEvidence));\n  evidence.result = JSON.parse(JSON.stringify(context.result));\n  evidence.subject = context.request.subject;\n  evidence.reference = context.eventId;\n  evidence.request = context.request;\n  if (context.fixtureCase === 'evidence_wrong_id') evidence.result.id = '00000000-0000-4000-8000-000000000099';\n  return evidence;\n}\n\n\nconst base = {\"format\":\"sanctionskit-evidence@1\",\"result\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"status\":\"potential_match\",\"matches\":[{\"score\":96,\"record\":{\"id\":\"sandbox:person-001\",\"list\":\"Synthetic demonstration records\",\"names\":[{\"kind\":\"primary\",\"value\":\"Alex Morgan\"},{\"kind\":\"alias\",\"value\":\"Алекс Морган\"}],\"sourceId\":\"sandbox-synthetic\",\"addresses\":[],\"authority\":\"SanctionsKit synthetic examples\",\"sourceUrl\":\"https://sanctionskit.com/demo\",\"birthDates\":[{\"value\":\"1984\",\"original\":\"1984\",\"precision\":\"year\"}],\"entityType\":\"person\",\"extensions\":{\"synthetic\":true},\"identifiers\":[{\"type\":\"passport\",\"value\":\"DEMO-001\",\"issuer\":\"Fictional authority\"}],\"designations\":[{\"wording\":\"Invented example, not a government designation.\",\"category\":\"other\",\"programs\":[\"Synthetic demonstration only\"],\"legalReferences\":[]}],\"nationalities\":[]},\"evidence\":[{\"field\":\"name\",\"method\":\"normalized_name_exact\",\"queryValue\":\"Alex Morgan\",\"explanation\":\"Name similarity is a review signal, not a probability or finding of wrongdoing.\",\"sourceValue\":\"Alex Morgan\",\"contribution\":96}],\"conflicts\":[],\"assessment\":{\"name\":{\"method\":\"normalized_name_exact\",\"aliasKind\":\"primary\",\"similarity\":96,\"aliasQuality\":\"unknown\"},\"country\":{\"status\":\"not_supplied\"},\"birthDate\":{\"status\":\"not_supplied\"},\"alertBasis\":\"name\",\"entityType\":{\"status\":\"agreement\"},\"reviewTier\":\"name_only\",\"identifiers\":{\"status\":\"not_supplied\",\"matched\":0,\"conflicts\":0,\"issuerUnknown\":0,\"issuerAgreements\":0},\"hasConflicts\":false,\"sameNameCandidates\":1}}],\"coverage\":[{\"fresh\":true,\"version\":\"1\",\"sourceId\":\"sandbox-synthetic\",\"retrievedAt\":\"2026-09-17T12:00:00.000Z\"}],\"matching\":{\"profile\":\"standard\",\"version\":\"review-1.2.0\",\"nameThreshold\":78,\"retrievalVersion\":\"indexed-1.1.1\",\"corroboratedNameThreshold\":75},\"versions\":{\"policy\":\"review-1.2.0\",\"dataset\":\"sandbox-synthetic-v1\",\"package\":\"sandbox@1\",\"matchingEngine\":\"deterministic-1.2.0\"},\"createdAt\":\"2026-09-17T12:00:00.000Z\",\"disclaimer\":\"Potential matches support analyst review. No match means no match in the selected sources and dataset, not legal clearance. Scores and evidence categories support review; they are not probabilities of identity or wrongdoing.\",\"environment\":\"sandbox\"},\"retention\":\"standard\",\"expires_at\":null,\"subject\":{\"name\":\"Alex Morgan\",\"entityType\":\"person\",\"birthDate\":\"1984\"},\"reference\":\"example-customer-001\",\"request\":{\"subject\":{\"name\":\"Alex Morgan\",\"entityType\":\"person\",\"birthDate\":\"1984\"},\"package\":\"sandbox@1\",\"reference\":\"example-customer-001\",\"retention\":\"standard\"},\"retainedInputs\":true,\"replayLimit\":null};\nreturn $input.all().map((item, i) => ({ json: fixtureEvidence(item.json, base), pairedItem: { item: i } }));"
+      },
+      "id": "get-same-screening-evidence",
+      "name": "Get same screening evidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Inlined into the importable workflows by build.cjs. No network or filesystem access.\nfunction isObject(value) {\n  return value !== null && typeof value === 'object' && !Array.isArray(value);\n}\n\nfunction canonical(value) {\n  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';\n  if (isObject(value)) return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';\n  return JSON.stringify(value);\n}\n\nfunction mapEvent(event) {\n  // This example intentionally accepts only its explicitly synthetic input shape.\n  // Invalid input stops before the API node; it is never a no-match outcome.\n  if (!isObject(event) || event.synthetic !== true || typeof event.eventId !== 'string' || !/^[A-Za-z0-9_:.-]{4,124}$/.test(event.eventId)) {\n    throw new Error('Provide a synthetic event with a stable eventId of 4-124 allowed characters');\n  }\n  if (!isObject(event.subject) || typeof event.subject.name !== 'string' || event.subject.name.trim().length < 2 || event.subject.name.trim().length > 300 || event.subject.entityType !== 'person') {\n    throw new Error('This example requires a fictional person with a name');\n  }\n  if (event.subject.birthDate !== undefined && (typeof event.subject.birthDate !== 'string' || !/^(?!0000)\\d{4}$/.test(event.subject.birthDate))) {\n    throw new Error('This example accepts only a known birth year, or omit birthDate');\n  }\n  const subject = { name: event.subject.name.trim(), entityType: 'person', identifiers: [] };\n  if (event.subject.birthDate !== undefined) subject.birthDate = event.subject.birthDate;\n  return {\n    eventId: event.eventId,\n    requestKey: 'n8n:' + event.eventId,\n    request: { subject, package: 'sandbox@1', reference: event.eventId, retention: 'standard' },\n    onboardingDecision: 'not_made',\n    ...(event.fixtureCase ? { fixtureCase: event.fixtureCase } : {}),\n  };\n}\n\nfunction failure(context, stage, errorCode, route = 'request_error') {\n  return { ...context, route, stage, errorCode, onboardingDecision: 'not_made' };\n}\n\nfunction nodeFailure(response, context, stage) {\n  if (!isObject(response) || !Object.hasOwn(response, 'error')) return null;\n  // v0.1.0 continued errors expose a sanitized message, not an HTTP status/code object.\n  // Recognize only that exact format. Unrecognized errors remain incomplete requests.\n  const match = typeof response.error === 'string' && /^SanctionsKit request failed \\(([a-z_]{1,80})\\)$/.exec(response.error);\n  const code = match ? match[1] : 'unclassified_node_error';\n  return failure(context, stage, code, ['coverage_unavailable', 'stale_coverage'].includes(code) ? 'coverage_unavailable' : 'request_error');\n}\n\nfunction resultIssue(result) {\n  if (!isObject(result) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result.id || '') || result.environment !== 'sandbox' || !['potential_match', 'no_match'].includes(result.status) || !Array.isArray(result.matches) || typeof result.createdAt !== 'string' || !Number.isFinite(Date.parse(result.createdAt)) || typeof result.disclaimer !== 'string' || !result.disclaimer.trim() || !isObject(result.versions) || !['dataset', 'matchingEngine', 'policy'].every(k => typeof result.versions[k] === 'string' && result.versions[k])) {\n    return 'invalid_result';\n  }\n  if (result.versions.package !== 'sandbox@1') return 'unexpected_coverage_package';\n  if ((result.status === 'no_match' && result.matches.length !== 0) || (result.status === 'potential_match' && result.matches.length === 0)) return 'inconsistent_result';\n  if (!result.matches.every(candidate => {\n    if (!isObject(candidate) || !Number.isFinite(candidate.score) || candidate.score < 0 || candidate.score > 100 || !Array.isArray(candidate.evidence) || !Array.isArray(candidate.conflicts) || !candidate.conflicts.every(value => typeof value === 'string')) return false;\n    if (!candidate.evidence.every(value => isObject(value) && ['field', 'queryValue', 'sourceValue', 'method', 'explanation'].every(k => typeof value[k] === 'string') && Number.isFinite(value.contribution))) return false;\n    const record = candidate.record;\n    return isObject(record) && ['id', 'sourceId', 'authority', 'list', 'sourceUrl'].every(k => typeof record[k] === 'string') && ['person', 'organization', 'vessel', 'aircraft', 'other'].includes(record.entityType) && ['names', 'identifiers', 'birthDates', 'addresses', 'nationalities', 'designations'].every(k => Array.isArray(record[k])) && record.names.length > 0 && record.names.every(name => isObject(name) && typeof name.value === 'string' && ['primary', 'alias'].includes(name.kind)) && isObject(record.extensions);\n  })) return 'invalid_candidate_evidence';\n  if (!Array.isArray(result.coverage) || result.coverage.length === 0 || !result.coverage.every(c => isObject(c) && c.fresh === true && typeof c.sourceId === 'string' && c.sourceId && typeof c.version === 'string' && c.version && typeof c.retrievedAt === 'string' && Number.isFinite(Date.parse(c.retrievedAt)))) return 'coverage_unavailable';\n  return null;\n}\n\nfunction classifyScreening(response, context) {\n  const failed = nodeFailure(response, context, 'screening');\n  if (failed) return failed;\n  const issue = resultIssue(response);\n  if (issue) return failure(context, 'screening', issue, issue === 'coverage_unavailable' ? issue : 'request_error');\n  return { ...context, route: 'fetch_evidence', result: response, screeningId: response.id };\n}\n\nfunction finishEvidence(evidence, context) {\n  const failed = nodeFailure(evidence, context, 'evidence');\n  if (failed) return failed;\n  if (!isObject(evidence) || evidence.format !== 'sanctionskit-evidence@1') return failure(context, 'evidence', 'invalid_evidence');\n  const issue = resultIssue(evidence.result);\n  if (issue) return failure(context, 'evidence', issue, issue === 'coverage_unavailable' ? issue : 'request_error');\n  // Preserve the entire document, but compare all original result fields to the\n  // result that triggered this fetch. Object key order is immaterial.\n  if (!Object.keys(context.result).every(k => canonical(context.result[k]) === canonical(evidence.result[k]))) return failure(context, 'evidence', 'evidence_result_mismatch');\n  if (evidence.retention !== 'standard' || evidence.retainedInputs !== true || !Object.hasOwn(evidence, 'expires_at') || !Object.hasOwn(evidence, 'replayLimit') || evidence.reference !== context.eventId || canonical(evidence.subject) !== canonical(context.request.subject) || canonical(evidence.request) !== canonical(context.request)) return failure(context, 'evidence', 'evidence_input_mismatch');\n  return {\n    ...context,\n    route: context.result.status === 'potential_match' ? 'review_required' : 'no_match_policy_review',\n    stage: 'evidence_complete',\n    evidence,\n    onboardingDecision: 'not_made',\n  };\n}\n\nfunction outputIndex(route) {\n  return ({ review_required: 0, no_match_policy_review: 1, request_error: 2, coverage_unavailable: 3 })[route] ?? 2;\n}\n\n\nreturn $input.all().map((item, i) => ({ json: finishEvidence(item.json, $(\"Classify screening response\").itemMatching(i).json), pairedItem: { item: i } }));"
+      },
+      "id": "build-review-record",
+      "name": "Build review record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 4,
+        "output": "={{ ({review_required: 0, no_match_policy_review: 1, request_error: 2, coverage_unavailable: 3})[$json.route] ?? 2 }}"
+      },
+      "id": "route-review-record",
+      "name": "Route review record",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1770,
+        250
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "potential-match-human-review",
+      "name": "Potential match - human review",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2030,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "no-match-apply-organization-policy",
+      "name": "No match - apply organization policy",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2030,
+        170
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "request-or-evidence-error-incomplete",
+      "name": "Request or evidence error - incomplete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2030,
+        340
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "coverage-unavailable-incomplete",
+      "name": "Coverage unavailable - incomplete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2030,
+        510
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## OFFLINE synthetic onboarding review\nTen invented fixture cases exercise all four routes. No API call, credentials, or real subjects. This is a local demonstration, not live screening. Open the four final nodes to inspect the records. All decisions remain **not_made**.\n\nThe separate sandbox workflow uses n8n-nodes-sanctionskit@0.1.0 and requires your own sandbox credential. Sandbox is free and synthetic; production screening is paid.",
+        "height": 300,
+        "width": 1040
+      },
+      "id": "read-first",
+      "name": "Read first",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -170
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual demonstration": {
+      "main": [
+        [
+          {
+            "node": "Synthetic onboarding events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic onboarding events": {
+      "main": [
+        [
+          {
+            "node": "Map onboarding event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map onboarding event": {
+      "main": [
+        [
+          {
+            "node": "Screen synthetic subject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Screen synthetic subject": {
+      "main": [
+        [
+          {
+            "node": "Classify screening response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify screening response": {
+      "main": [
+        [
+          {
+            "node": "Fetch evidence or incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch evidence or incomplete": {
+      "main": [
+        [
+          {
+            "node": "Get same screening evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route review record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get same screening evidence": {
+      "main": [
+        [
+          {
+            "node": "Build review record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build review record": {
+      "main": [
+        [
+          {
+            "node": "Route review record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route review record": {
+      "main": [
+        [
+          {
+            "node": "Potential match - human review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No match - apply organization policy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request or evidence error - incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Coverage unavailable - incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

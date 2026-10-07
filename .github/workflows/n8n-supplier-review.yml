@@ -1,0 +1,31 @@
+name: n8n supplier review example
+
+on:
+  push:
+    paths:
+      - "integrations/n8n-supplier-review/**"
+      - ".github/workflows/n8n-supplier-review.yml"
+  pull_request:
+    paths:
+      - "integrations/n8n-supplier-review/**"
+      - ".github/workflows/n8n-supplier-review.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Test row identity, duplicate handling, and failure behavior
+        run: npm --prefix integrations/n8n-supplier-review test
+      - name: Verify generated workflows and example output
+        run: npm --prefix integrations/n8n-supplier-review run check

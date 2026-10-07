@@ -1,0 +1,31 @@
+name: n8n onboarding example
+
+on:
+  push:
+    paths:
+      - "integrations/n8n/**"
+      - ".github/workflows/n8n.yml"
+  pull_request:
+    paths:
+      - "integrations/n8n/**"
+      - ".github/workflows/n8n.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-routing-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Check generated workflows
+        run: |
+          npm --prefix integrations/n8n run build
+          git diff --exit-code -- integrations/n8n/onboarding-review.offline.json integrations/n8n/onboarding-review.sandbox.json
+      - name: Test synthetic routing without credentials or network requests
+        run: npm --prefix integrations/n8n test

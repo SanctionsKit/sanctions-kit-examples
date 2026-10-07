@@ -24,6 +24,14 @@ Each directory has setup instructions and one standalone screening example. No S
 
 ## Workflow integrations
 
+[n8n onboarding review](integrations/n8n/) routes a fictional onboarding event through screening, retained evidence, and four explicit review or incomplete-request outcomes. Import the credential-free offline demonstration to inspect ten synthetic cases, or use the separate sandbox workflow with the SanctionsKit node. Both preserve stable event identity and leave the onboarding decision open.
+
+Run its local routing tests with `npm --prefix integrations/n8n test`. The README also describes the optional published-node contract and native n8n runtime checks.
+
+[n8n supplier review register](integrations/n8n-supplier-review/) keeps every invented supplier row visible, including duplicates, conflicts, errors, and unavailable coverage. Import the credential-free offline demo or configure the separate synthetic sandbox adaptation. It produces execution output without approving suppliers or claiming an external saved register.
+
+Run its local checks with `npm --prefix integrations/n8n-supplier-review test` and `npm --prefix integrations/n8n-supplier-review run check`.
+
 [Windmill](integrations/windmill/) takes a fictional onboarding contact through a synthetic screening and retrieves the evidence for that same result. It includes a credential resource, importable script, example output, and local tests. Both screening outcomes leave the onboarding decision open for review.
 
 Run its local HTTP tests with Node.js 24 or later:

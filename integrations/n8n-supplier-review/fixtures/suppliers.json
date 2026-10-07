@@ -1,0 +1,15 @@
+{
+  "listId": "demo-suppliers-v1",
+  "maxAttempts": 6,
+  "rows": [
+    {"supplierId": "supplier-001", "revision": 1, "name": "Example Meridian Parts Ltd", "country": "GB", "fixtureOutcome": "potential_match"},
+    {"supplierId": "supplier-002", "revision": 1, "name": "Example Juniper Packing Ltd", "country": "GB", "fixtureOutcome": "no_match"},
+    {"supplierId": "supplier-001", "revision": 1, "name": "Example Meridian Parts Ltd", "country": "GB", "fixtureOutcome": "potential_match"},
+    {"supplierId": "supplier-003", "revision": 1, "name": "Example Beacon Shipping Ltd", "fixtureOutcome": "no_match"},
+    {"supplierId": "supplier-003", "revision": 1, "name": "Example Beacon Shipping Holdings Ltd", "fixtureOutcome": "no_match"},
+    {"supplierId": "supplier-004", "revision": 1, "name": "X", "fixtureOutcome": "no_match"},
+    {"supplierId": "supplier-005", "revision": 1, "name": "Example Orchard Metals Ltd", "fixtureOutcome": "invalid_request"},
+    {"supplierId": "supplier-006", "revision": 1, "name": "Example Cedar Supplies Ltd", "fixtureOutcome": "coverage_unavailable"},
+    {"supplierId": "supplier-007", "revision": 1, "name": "Example Harbor Components Ltd", "fixtureOutcome": "no_match"}
+  ]
+}

@@ -24,3 +24,18 @@ Choose one or more of `curl`, `javascript`, `typescript`, `python`, `go`, `php`,
 The checks start a local HTTP server and run the actual scripts against it. They check authentication, request bodies, response output, failed requests, and reuse of the request key. No live API credentials are used. GitHub Actions runs the same checks for each language.
 
 Keep pull requests focused. Describe what changed and which checks you ran. Do not include API keys, real subject data, or private screening responses in issues, fixtures, or logs.
+
+## n8n workflow examples
+
+The [onboarding review](integrations/n8n/) and [supplier review register](integrations/n8n-supplier-review/) examples have separate fixture suites and CI path filters. Run the checks for the example you changed:
+
+```sh
+npm --prefix integrations/n8n test
+npm --prefix integrations/n8n run build
+git diff --exit-code -- integrations/n8n/onboarding-review.offline.json integrations/n8n/onboarding-review.sandbox.json
+
+npm --prefix integrations/n8n-supplier-review test
+npm --prefix integrations/n8n-supplier-review run check
+```
+
+After changing source functions or fixtures, regenerate that example's workflow files with its `npm run build` command and review the generated diff. Each README documents optional published-node contract tests and native n8n import/export checks. Only offline fixture workflows are executed by those native checks; do not use live credentials or real subjects for repository validation.

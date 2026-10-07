@@ -1,0 +1,12 @@
+[
+  {"case":"potential_match","route":"review_required"},
+  {"case":"coverage_unavailable","route":"coverage_unavailable"},
+  {"case":"no_match","route":"no_match_policy_review"},
+  {"case":"invalid_api_key","route":"request_error"},
+  {"case":"stale_coverage","route":"coverage_unavailable"},
+  {"case":"evidence_error","route":"request_error"},
+  {"case":"idempotency_conflict","route":"request_error"},
+  {"case":"evidence_wrong_id","route":"request_error"},
+  {"case":"no_match_missing_coverage","route":"coverage_unavailable"},
+  {"case":"unknown_error_shape","route":"request_error"}
+]
